@@ -51,7 +51,7 @@ jobs:
                 }
                 
                 const cards = await response.json();
-                const matchingCard = cards.find(card => card.name.toLowerCase() === prTitle.toLowerCase());
+                const matchingCard = cards.find(card => `$([#card.name.toLowerCase()])` === prTitle.toLowerCase());
                 
                 if (!matchingCard) {
                   core.setFailed(`Errore: Nessuna carta Trello trovata con il titolo "${prTitle}" nella board specificata.`);
