@@ -10,7 +10,7 @@ on:
 
 jobs:
   lint:
-    name: Validate PR title And link Jira Issue
+    name: Validate PR title and Check Trello Card
     runs-on: ubuntu-22.04
     env:
       SAMPLE: "^.*sample.*"
@@ -20,6 +20,34 @@ jobs:
         with:
           regexp: "\\[(#?[A-Z]*-[0-9]*( |, )?){1,}\\]" # Regex the title should match.
         continue-on-error: true
+      - name: Verifica titolo PR su Trello
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const axios = require('axios');
+
+            const trelloApiKey = '${{ secrets.TRELLO_API_KEY }}';
+            const trelloToken = '${{ secrets.TRELLO_TOKEN }}';
+            const trelloBoardId = '${{ secrets.TRELLO_BOARD_ID }}';
+
+            const prTitle = context.payload.pull_request.title;
+
+            async function checkTrelloCard() {
+              try {
+                const response = await axios.get(`https://api.trello.com/1/search?query=${encodeURIComponent(prTitle)}&idBoards=${trelloBoardId}&key=${trelloApiKey}&token=${trelloToken}`);
+                
+                if (response.data.cards.length === 0) {
+                  core.setFailed(`Errore: Nessuna carta Trello trovata con il titolo "${prTitle}" nella board specificata.`);
+                } else {
+                  console.log(`Carta Trello trovata con il titolo "${prTitle}"`);
+                }
+              } catch (error) {
+                core.setFailed(`Errore durante la verifica della carta Trello: ${error.message}`);
+              }
+            }
+
+            checkTrelloCard();
       - name: Failure message
         if: steps.lint.outcome != 'success'
         run: |
