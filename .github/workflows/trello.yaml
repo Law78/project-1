@@ -20,3 +20,8 @@ jobs:
         with:
           regexp: "\\[(#?[A-Z]*-[0-9]*( |, )?){1,}\\]" # Regex the title should match.
         continue-on-error: true
+      - name: Failure message
+        if: steps.lint.outcome != 'success'
+        run: |
+          echo "Pull request title (${{ github.event.pull_request.title }}) is not properly formatted or it is not related to any Jira issue"
+          exit 1
