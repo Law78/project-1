@@ -1,0 +1,22 @@
+name: "Lint and Link PR title"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+jobs:
+  lint:
+    name: Validate PR title And link Jira Issue
+    runs-on: ubuntu-22.04
+    env:
+      SAMPLE: "^.*sample.*"
+    steps:
+      - uses: Slashgear/action-check-pr-title@860e8dc639f8e60335a6f5e8936ba67ed2536890
+        id: lint
+        with:
+          regexp: "\\[(#?[A-Z]*-[0-9]*( |, )?){1,}\\]" # Regex the title should match.
+        continue-on-error: true
