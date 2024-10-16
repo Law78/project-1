@@ -31,13 +31,28 @@ jobs:
 
             const prTitle = context.payload.pull_request.title;
 
+            function isValidTrelloBoardId(id) {
+              return /^[0-9a-fA-F]{24}$/.test(id) || /^[a-zA-Z0-9]{8}$/.test(id);
+            }
+
             async function checkTrelloCard() {
+              if (!isValidTrelloBoardId(trelloBoardId)) {
+                core.setFailed(`Errore: L'ID della board Trello non sembra essere valido: ${trelloBoardId}`);
+                return;
+              }
+              
               try {
-                const url = `https://api.trello.com/1/search?query=${encodeURIComponent(prTitle)}&idBoards=${trelloBoardId}&key=${trelloApiKey}&token=${trelloToken}`;
+                const url = `https://api.trello.com/1/boards/${trelloBoardId}/cards?key=${trelloApiKey}&token=${trelloToken}`;
                 const response = await fetch(url);
-                const data = await response.json();
                 
-                if (data.cards.length === 0) {
+                if (!response.ok) {
+                  throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const cards = await response.json();
+                const matchingCard = cards.find(card => card.name.toLowerCase() === prTitle.toLowerCase());
+                
+                if (!matchingCard) {
                   core.setFailed(`Errore: Nessuna carta Trello trovata con il titolo "${prTitle}" nella board specificata.`);
                 } else {
                   console.log(`Carta Trello trovata con il titolo "${prTitle}"`);
