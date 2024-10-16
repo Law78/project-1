@@ -26,7 +26,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const trelloApiKey = '${{ secrets.TRELLO_API_KEY }}';
-            const trelloToken = '${{ secrets.TRELLO_AUTH_TOKEN }}';
+            const trelloToken = '${{ secrets.TRELLO_TOKEN }}';
             const trelloBoardId = '${{ secrets.TRELLO_BOARD_ID }}';
 
             const prTitle = context.payload.pull_request.title;
@@ -35,15 +35,25 @@ jobs:
               return /^[0-9a-fA-F]{24}$/.test(id) || /^[a-zA-Z0-9]{8}$/.test(id);
             }
 
+            function extractCodeFromPRTitle(title) {
+              const match = title.match(/^\[#([\w-]+)\]/);
+              return match ? match[1] : null;
+            }
+
             async function checkTrelloCard() {
               if (!isValidTrelloBoardId(trelloBoardId)) {
                 core.setFailed(`Errore: L'ID della board Trello non sembra essere valido: ${trelloBoardId}`);
                 return;
               }
               
+              const prCode = extractCodeFromPRTitle(prTitle);
+              if (!prCode) {
+                core.setFailed(`Errore: Il titolo della PR non inizia con un codice valido nel formato [#codice]`);
+                return;
+              }
+              
               try {
                 const url = `https://api.trello.com/1/boards/${trelloBoardId}/cards?key=${trelloApiKey}&token=${trelloToken}`;
-                console.log(url);
                 const response = await fetch(url);
                 
                 if (!response.ok) {
@@ -51,12 +61,12 @@ jobs:
                 }
                 
                 const cards = await response.json();
-                const matchingCard = cards.find(card => `$([#card.name.toLowerCase()])` === prTitle.toLowerCase());
+                const matchingCard = cards.find(card => card.name.startsWith(prCode));
                 
                 if (!matchingCard) {
-                  core.setFailed(`Errore: Nessuna carta Trello trovata con il titolo "${prTitle}" nella board specificata.`);
+                  core.setFailed(`Errore: Nessuna carta Trello trovata che inizia con il codice "${prCode}" nella board specificata.`);
                 } else {
-                  console.log(`Carta Trello trovata con il titolo "${prTitle}"`);
+                  console.log(`Carta Trello trovata che inizia con il codice "${prCode}": "${matchingCard.name}"`);
                 }
               } catch (error) {
                 core.setFailed(`Errore durante la verifica della carta Trello: ${error.message}`);
