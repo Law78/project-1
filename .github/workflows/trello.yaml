@@ -26,7 +26,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const trelloApiKey = '${{ secrets.TRELLO_API_KEY }}';
-            const trelloToken = '${{ secrets.TRELLO_TOKEN }}';
+            const trelloToken = '${{ secrets.TRELLO_AUTH_TOKEN }}';
             const trelloBoardId = '${{ secrets.TRELLO_BOARD_ID }}';
 
             const prTitle = context.payload.pull_request.title;
